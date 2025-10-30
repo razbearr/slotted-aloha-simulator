@@ -71,3 +71,5 @@ Follow these steps to set up and run the simulator on your local machine.
 * **NumPy** - For efficient numerical calculations
 * **Pandas** - For data structuring
 * **Matplotlib** / **Altair** - For plotting the graphs
+-----
+Katyayni Aarya
