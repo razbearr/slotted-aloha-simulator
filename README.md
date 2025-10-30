@@ -75,5 +75,5 @@ Follow these steps to set up and run the simulator on your local machine.
 ## Authors
 
 * Katyayni Aarya - [razbearr](https://github.com/razbearr)
-* Suyesha Saha
+* Suyesha Saha - [suyu101](https://github.com/suyu101)
 * Copyright © 2025 Katyayni Aarya and Suyesha Saha. All rights reserved.
