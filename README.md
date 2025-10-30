@@ -74,5 +74,5 @@ Follow these steps to set up and run the simulator on your local machine.
 
 ## Authors
 
-Katyayni Aarya
-Suyesha Saha
+* Katyayni Aarya
+* Suyesha Saha
