@@ -4,13 +4,6 @@ This project is an interactive web application built with **Streamlit** to simul
 
 It allows you to adjust parameters like the number of nodes (N) and their transmission probability (p) to instantly see how they affect network performance. This tool is perfect for students and engineers who want to visualize the trade-offs between network load and throughput.
 
-## 📊 Screenshots
-
-Here's a look at the simulator's dashboard:
-
-![Slotted ALOHA Simulator Dashboard](Screenshot_2025-10-30_at_10.01.29_pm.jpg)
-![Slotted ALOHA Simulator Details](Screenshot_2025-10-30_at_10.01.38_pm.png)
-![Slotted ALOHA Simulator Timeline](Screenshot_2025-10-30_at_10.01.43_pm.jpg)
 
 *(Note: Make sure your screenshot files are in the same directory as the README or update the paths!)*
 
