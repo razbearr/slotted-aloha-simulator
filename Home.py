@@ -3,7 +3,7 @@ import streamlit as st
 # Page configuration
 st.set_page_config(
     page_title="Network Protocol Simulator",
-    page_icon="",
+    page_icon="assets/logo.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
