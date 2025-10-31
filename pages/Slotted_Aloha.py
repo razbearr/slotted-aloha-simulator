@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 # Title and description
-st.title("📡 Slotted ALOHA Protocol Simulator")
+st.title("Slotted ALOHA Protocol Simulator")
 st.markdown("""
 This simulator demonstrates the **Slotted ALOHA** protocol, a random access protocol 
 where time is divided into slots and nodes can only transmit at the beginning of a slot.
@@ -126,7 +126,7 @@ def get_theoretical_throughput(G_values):
     """Calculate theoretical throughput: S = G * e^(-G)"""
     return G_values * np.exp(-G_values)
 
-# NEW: Plot node-level timeline diagram (Gantt chart)
+# Plot node-level timeline diagram (Gantt chart)
 def plot_node_timeline(node_transmissions, num_slots_to_show=50):
     """
     Create a Gantt-style timeline showing packet transmission attempts per node
@@ -198,20 +198,51 @@ if run_simulation:
     
     st.divider()
     
-    # NEW: Timeline diagram showing packet transmission attempts
-    st.subheader("📊 Timeline Diagram: Packet Transmission Attempts")
-    st.markdown("**Gantt chart showing which nodes attempted transmission in each slot**")
+    # Slot-wise event table (SUCCESS, COLLISION, IDLE)
+    st.subheader("Slot-wise Event Table")
+    st.markdown("Event log showing success, collision, or idle status for each time slot")
+    
+    # Create DataFrame from slots_data
+    df_events = pd.DataFrame(slots_data, columns=['Slot', 'Num Transmissions', 'Status'])
+    
+    # Display table
+    st.dataframe(df_events, use_container_width=True, height=400)
+    
+    st.divider()
+    
+    # Timeline diagram showing packet transmission attempts
+    st.subheader("Timeline Diagram: Packet Transmission Attempts")
+    st.markdown("Gantt chart showing which nodes attempted transmission in each slot")
     plot_node_timeline(node_transmissions, num_slots_to_show=min(100, num_slots))
     
     st.divider()
     
-    # Create two columns for charts
-    chart_col1, chart_col2 = st.columns(2)
+    # Throughput calculation and Efficiency graph vs offered load
+    st.subheader("Throughput Calculation & Efficiency Graph vs Offered Load")
     
-    with chart_col1:
-        st.subheader("📈 Throughput vs Offered Load")
+    col_a, col_b = st.columns(2)
+    
+    with col_a:
+        st.markdown("**Throughput Calculation:**")
+        st.markdown(f"""
+        - **Successful Transmissions:** {stats['successful']}
+        - **Total Slots:** {num_slots}
+        - **Throughput (S):** {stats['throughput']:.4f}
+        - **Formula:** S = Successful Transmissions / Total Slots
+        - **Calculation:** S = {stats['successful']} / {num_slots} = {stats['throughput']:.4f}
+        """)
         
-        # Create figure
+        st.markdown("**Performance Metrics:**")
+        st.markdown(f"""
+        - **Offered Load (G):** {stats['offered_load']:.3f}
+        - **Efficiency:** {stats['efficiency']:.1f}% of theoretical max
+        - **Theoretical Maximum:** {stats['theoretical_max']:.4f}
+        - **Collisions:** {stats['collisions']}
+        - **Idle Slots:** {stats['idle']}
+        """)
+    
+    with col_b:
+        # Efficiency graph vs offered load
         fig1, ax1 = plt.subplots(figsize=(8, 6))
         
         # Theoretical curve
@@ -231,7 +262,7 @@ if run_simulation:
         
         ax1.set_xlabel('Offered Load (G = N × p)', fontsize=12)
         ax1.set_ylabel('Throughput (S)', fontsize=12)
-        ax1.set_title('Slotted ALOHA Performance', fontsize=14, fontweight='bold')
+        ax1.set_title('Efficiency Graph: Throughput vs Offered Load', fontsize=14, fontweight='bold')
         ax1.grid(True, alpha=0.3)
         ax1.legend()
         ax1.set_xlim(0, 5)
@@ -239,10 +270,15 @@ if run_simulation:
         
         st.pyplot(fig1)
     
-    with chart_col2:
-        st.subheader("🥧 Slot Status Distribution")
-        
-        # Create pie chart
+    st.divider()
+    
+    # Additional visualizations
+    st.subheader("Additional Visualizations")
+    
+    chart_col1, chart_col2 = st.columns(2)
+    
+    with chart_col1:
+        # Pie chart
         fig2, ax2 = plt.subplots(figsize=(8, 6))
         
         sizes = [stats['successful'], stats['collisions'], stats['idle']]
@@ -252,92 +288,45 @@ if run_simulation:
         
         ax2.pie(sizes, explode=explode, labels=labels, colors=colors,
                 autopct='%1.1f%%', shadow=True, startangle=90)
-        ax2.set_title('Time Slot Distribution', fontsize=14, fontweight='bold')
+        ax2.set_title('Slot Status Distribution', fontsize=14, fontweight='bold')
         
         st.pyplot(fig2)
     
-    st.divider()
-    
-    # Slot-wise event table
-    st.subheader("📋 Slot-wise Event Table")
-    st.markdown("**Event log showing success, collision, or idle status for each time slot**")
-    
-    # Create DataFrame from slots_data
-    df_events = pd.DataFrame(slots_data, columns=['Slot', 'Transmissions', 'Status'])
-    
-    # Display with filtering option
-    col_filter1, col_filter2 = st.columns([1, 3])
-    with col_filter1:
-        show_rows = st.selectbox("Show rows:", [50, 100, 200, "All"], index=0)
-    
-    if show_rows == "All":
-        st.dataframe(df_events, use_container_width=True, height=400)
-    else:
-        st.dataframe(df_events.head(show_rows), use_container_width=True, height=400)
-    
-    st.divider()
-    
-    # Detailed statistics
-    st.subheader("📈 Detailed Statistics")
-    
-    col_a, col_b = st.columns(2)
-    
-    with col_a:
-        st.info(f"""
-        **Simulation Parameters:**
-        - Number of Nodes: {num_nodes}
-        - Transmission Probability: {transmission_prob:.2f}
-        - Total Time Slots: {num_slots}
-        - Offered Load (G): {stats['offered_load']:.3f}
-        """)
-    
-    with col_b:
-        st.success(f"""
-        **Performance Metrics:**
-        - Successful Transmissions: {stats['successful']}
-        - Collisions: {stats['collisions']}
-        - Idle Slots: {stats['idle']}
-        - Efficiency: {stats['efficiency']:.1f}% of theoretical max
-        """)
-    
-    st.divider()
-    
-    # Time series chart
-    st.subheader("⏱️ Transmission Activity Over Time")
-    
-    fig3, ax3 = plt.subplots(figsize=(14, 4))
-    
-    # Show first 100 slots
-    display_slots = min(100, num_slots)
-    slot_numbers = [s[0] for s in slots_data[:display_slots]]
-    num_transmissions = [s[1] for s in slots_data[:display_slots]]
-    statuses = [s[2] for s in slots_data[:display_slots]]
-    
-    # Color code by status
-    colors_map = {'Idle': '#95a5a6', 'Success': '#2ecc71', 'Collision': '#e74c3c'}
-    bar_colors = [colors_map[status] for status in statuses]
-    
-    ax3.bar(slot_numbers, num_transmissions, color=bar_colors, alpha=0.7)
-    ax3.set_xlabel('Time Slot', fontsize=12)
-    ax3.set_ylabel('Number of Transmissions', fontsize=12)
-    ax3.set_title(f'Transmission Activity Timeline (First {display_slots} slots)', fontsize=14, fontweight='bold')
-    ax3.grid(True, alpha=0.3, axis='y')
-    
-    # Add legend
-    from matplotlib.patches import Patch
-    legend_elements = [
-        Patch(facecolor='#2ecc71', alpha=0.7, label='Success'),
-        Patch(facecolor='#e74c3c', alpha=0.7, label='Collision'),
-        Patch(facecolor='#95a5a6', alpha=0.7, label='Idle')
-    ]
-    ax3.legend(handles=legend_elements)
-    
-    st.pyplot(fig3)
+    with chart_col2:
+        # Time series chart
+        fig3, ax3 = plt.subplots(figsize=(8, 6))
+        
+        # Show first 100 slots
+        display_slots = min(100, num_slots)
+        slot_numbers = [s[0] for s in slots_data[:display_slots]]
+        num_transmissions = [s[1] for s in slots_data[:display_slots]]
+        statuses = [s[2] for s in slots_data[:display_slots]]
+        
+        # Color code by status
+        colors_map = {'Idle': '#95a5a6', 'Success': '#2ecc71', 'Collision': '#e74c3c'}
+        bar_colors = [colors_map[status] for status in statuses]
+        
+        ax3.bar(slot_numbers, num_transmissions, color=bar_colors, alpha=0.7)
+        ax3.set_xlabel('Time Slot', fontsize=12)
+        ax3.set_ylabel('Number of Transmissions', fontsize=12)
+        ax3.set_title(f'Transmission Activity (First {display_slots} slots)', fontsize=14, fontweight='bold')
+        ax3.grid(True, alpha=0.3, axis='y')
+        
+        # Add legend
+        from matplotlib.patches import Patch
+        legend_elements = [
+            Patch(facecolor='#2ecc71', alpha=0.7, label='Success'),
+            Patch(facecolor='#e74c3c', alpha=0.7, label='Collision'),
+            Patch(facecolor='#95a5a6', alpha=0.7, label='Idle')
+        ]
+        ax3.legend(handles=legend_elements)
+        
+        st.pyplot(fig3)
     
     st.divider()
     
     # Download results
-    st.subheader("💾 Export Results")
+    st.subheader("Export Results")
     
     col_dl1, col_dl2 = st.columns(2)
     
@@ -345,7 +334,7 @@ if run_simulation:
         # Event table CSV
         csv_events = df_events.to_csv(index=False)
         st.download_button(
-            label="📥 Download Slot-wise Events (CSV)",
+            label="Download Slot-wise Events (CSV)",
             data=csv_events,
             file_name=f"slotted_aloha_events_N{num_nodes}_p{transmission_prob}.csv",
             mime="text/csv"
@@ -366,7 +355,7 @@ if run_simulation:
         }])
         csv_stats = stats_df.to_csv(index=False)
         st.download_button(
-            label="📥 Download Statistics Summary (CSV)",
+            label="Download Statistics Summary (CSV)",
             data=csv_stats,
             file_name=f"slotted_aloha_stats_N{num_nodes}_p{transmission_prob}.csv",
             mime="text/csv"
@@ -374,9 +363,9 @@ if run_simulation:
 
 else:
     # Initial state - show explanation
-    st.info("👈 Set your parameters in the sidebar and click **Run Simulation** to start!")
+    st.info("Set your parameters in the sidebar and click Run Simulation to start!")
     
-    st.header("📚 About Slotted ALOHA")
+    st.header("About Slotted ALOHA")
     
     st.markdown("""
     ### How It Works:
