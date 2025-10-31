@@ -1,79 +1,229 @@
-# Slotted ALOHA Protocol Simulator
+# 🛰️ MAC Access Protocols Simulator
 
-This project is an interactive web application built with **Streamlit** to simulate and visualize the Slotted ALOHA random access protocol.
+### *(Slotted ALOHA, CSMA/CD)*
 
-It allows you to adjust parameters like the number of nodes (N) and their transmission probability (p) to instantly see how they affect network performance. This tool is perfect for students and engineers who want to visualize the trade-offs between network load and throughput.
+An interactive **Streamlit-based web application** that simulates and visualizes the performance of two key **Medium Access Control (MAC)** protocols:
+**Slotted ALOHA**, **CSMA/CD**.
 
+This simulator helps you understand how multiple nodes compete for a shared communication channel, how collisions occur, and how different access strategies improve throughput and efficiency.
 
-*(Note: Make sure your screenshot files are in the same directory as the README or update the paths!)*
+---
 
-## ✨ Features
+## Features
 
-* **Interactive Controls:** Use sliders to set the **Number of Nodes (N)** and **Transmission Probability (p)**.
-* **Real-time Calculations:** Instantly see the **Offered Load ($G = N \times p$)** and the resulting **Throughput (S)**.
-* **Performance vs. Theory:** The "Throughput vs Offered Load" graph plots your simulation's result (red dot) against the theoretical Slotted ALOHA performance curve ($S = G \times e^{-G}$). It also highlights the theoretical maximum throughput (green star) at $G=1$.
-* **Detailed Visualizations:**
-    * **Time Slot Distribution:** A pie chart breaking down the simulation into **Successful**, **Collision**, and **Idle** slots.
-    * **Transmission Activity Timeline:** A bar chart that visualizes the status of the first 100 time slots, clearly showing where collisions occurred.
-* **Complete Statistics:** Get a full summary of simulation parameters and performance metrics, including total collisions, successes, and efficiency.
+### Interactive Controls
 
-## 💡 The Theory
+* **Number of Nodes (N)** – Set how many devices share the channel.
+* **Transmission Probability (p)** – Set how likely each node is to transmit per time slot.
+* **Propagation Delay Factor (α)** – Adjust for CSMA/CD to simulate real propagation effects.
+* Real-time metrics:
 
-This simulator demonstrates the core concept of Slotted ALOHA:
+  * Offered Load: **G = N × p**
+  * Throughput (S)
+  * Efficiency (%)
+  * Channel Utilization (%)
 
-* Time is divided into discrete **slots**.
-* Nodes can only begin transmitting at the start of a slot.
-* A **Success** occurs if *exactly one* node transmits in a slot.
-* A **Collision** occurs if *two or more* nodes transmit in the same slot.
-* An **Idle** slot occurs if *zero* nodes transmit.
+---
 
-The simulation proves the theory that the maximum possible throughput is $1/e \approx 0.368$ (or 36.8%), which happens only when the offered load $G=1$.
+### Real-Time Visualizations
 
-## 🚀 How to Run This Project
+#### 1. Throughput vs Offered Load
 
-Follow these steps to set up and run the simulator on your local machine.
+Plots both:
 
-1.  **Clone the repository:**
-    ```bash
-    git clone [https://github.com/your-username/slotted-aloha-simulator.git](https://github.com/your-username/slotted-aloha-simulator.git)
-    cd slotted-aloha-simulator
-    ```
+* The **theoretical curve** for Slotted ALOHA:
+  **S = G × e<sup>−G</sup>**
+* Your **simulation result** (red dot).
+* The **maximum theoretical throughput** (green star) at **G = 1**, where
+  **S<sub>max</sub> = 1/e ≈ 0.368 (36.8%)**
 
-2.  **Create and activate a virtual environment:**
-    *(This is a best practice to keep dependencies isolated)*
-    ```bash
-    # Create the virtual environment
-    python3 -m venv venv
+#### 2. Time Slot Distribution
 
-    # Activate it (on macOS/Linux)
-    source venv/bin/activate
+Pie chart showing:
 
-    # (On Windows, use: .\venv\Scripts\activate)
-    ```
+* 🟩 Successful transmissions
+* 🟥 Collisions
+* ⬛ Idle slots
 
-3.  **Install the required packages:**
-    ```bash
-    pip install -r requirements.txt
-    ```
+#### 3. Channel Activity Timeline
 
-4.  **Run the Streamlit app:**
-    ```bash
-    streamlit run app.py
-    ```
-    *(If your main Python file is named differently, like `main.py`, use that name instead.)*
+Color-coded timeline of simulation slots:
 
-    Streamlit will automatically open the simulator in your default web browser.
+* 🟩 Success
+* 🟥 Collision
+* ⬛ Idle
 
-## 🛠️ Technologies Used
+#### 4. Protocol Performance Comparison
 
-* **Python**
-* **Streamlit** - For the interactive web app UI
-* **NumPy** - For efficient numerical calculations
-* **Pandas** - For data structuring
-* **Matplotlib** / **Altair** - For plotting the graphs
+Bar charts comparing:
+
+* Efficiency (%)
+* Throughput (packets per time unit)
+* Channel Utilization (%)
+
+Protocols compared:
+
+* **1-Persistent CSMA**
+* **Non-Persistent CSMA**
+* **CSMA/CD**
+
+---
+
+### Download Results
+
+Export the protocol comparison data as a **CSV file** for your report or analysis.
+
+---
+
+## Theory Overview
+
+### Slotted ALOHA
+
+* Time is divided into slots.
+* A node transmits **only at the start of a slot**.
+* A **success** occurs if exactly one node transmits.
+* A **collision** occurs if two or more transmit at once.
+* Idle if no node transmits.
+
+**Throughput formula:**
+
+> S = G × e<sup>−G</sup>
+
+**Maximum efficiency:**
+
+> S<sub>max</sub> = 1/e ≈ 0.368 → 36.8%
+
+---
+
+### CSMA (Carrier Sense Multiple Access)
+
+Nodes **listen before transmitting**:
+
+* If channel is idle → transmit immediately.
+* If busy → wait and retry according to persistence type.
+
+| Type           | Behavior                                 | Typical Efficiency |
+| -------------- | ---------------------------------------- | ------------------ |
+| 1-Persistent   | Waits until idle, then transmits         | ~50–60%            |
+| Non-Persistent | Waits random backoff before retrying     | ~60–70%            |
+| p-Persistent   | Transmits with probability *p* when idle | Tunable            |
+
+**Approximate throughput model:**
+
+> S ≈ (G × e<sup>−aG</sup>) / (1 + 2aG)
+
+where **a = propagation delay / transmission time**.
+
+As **a → 0**, efficiency approaches **100%**.
+
+---
+
+### CSMA/CD (Carrier Sense Multiple Access with Collision Detection)
+
+Used in **Ethernet (IEEE 802.3)**.
+Enhances CSMA by **detecting collisions while transmitting**.
+
+When a collision occurs:
+
+1. Transmission stops immediately.
+2. A **jam signal** is sent.
+3. Node waits for a **random backoff** (Binary Exponential Backoff).
+
+**Efficiency formula:**
+
+> η = 1 / (1 + 5a)
+
+where **a = propagation delay / transmission time**.
+
+**Examples:**
+
+* a = 0.01 → η ≈ 95%
+* a = 0.1 → η ≈ 66%
+
+Efficiency falls as propagation delay grows.
+
+---
+
+## Protocol Comparison Summary
+
+| Protocol            | Channel Sensing | Collision Detection | Max Efficiency | Typical Medium   | Example Use     |
+| ------------------- | --------------- | ------------------- | -------------- | ---------------- | --------------- |
+| Slotted ALOHA       | ❌               | ❌                   | ~36.8%         | Radio/Satellite  | Uplink channels |
+| 1-Persistent CSMA   | ✅               | ❌                   | ~55–60%        | Radio            | Simple LANs     |
+| Non-Persistent CSMA | ✅               | ❌                   | ~60–70%        | Radio            | Wireless MAC    |
+| CSMA/CD             | ✅               | ✅                   | ~80–95%        | Wired (Ethernet) | IEEE 802.3 LANs |
+
+---
+
+## Learning Outcomes
+
+This simulator helps you:
+
+* Visualize **random access protocols** in real time.
+* Understand how **carrier sensing** and **collision detection** improve efficiency.
+* Compare **ALOHA, CSMA, and CSMA/CD** under identical load.
+* Analyze **throughput vs load** and **efficiency trade-offs**.
+* Export and report performance metrics easily.
+
+---
+
+## How to Run This Project
+
+1. **Clone the repository:**
+
+   ```bash
+   git clone https://github.com/razbearr/basic-mac-protocol-simulation.git
+   cd basic-mac-protocol-simulation
+   ```
+
+2. **Create and activate a virtual environment:**
+
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate   # macOS/Linux
+   .\venv\Scripts\activate    # Windows
+   ```
+
+3. **Install dependencies:**
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Run the Streamlit app:**
+
+   ```bash
+   streamlit run Home.py
+   ```
+
+---
+
+## Technologies Used
+
+* **Python 3.x**
+* **Streamlit** – Interactive web UI
+* **NumPy / Pandas** – Simulation logic
+* **Matplotlib / Altair** – Data visualization
+* **CSV Export** – Analysis-ready output
+
+---
+
+## Key Mathematical Summary
+
+| Protocol            | Throughput Formula                      | Max Efficiency         |
+| ------------------- | --------------------------------------- | ---------------------- |
+| Slotted ALOHA       | S = G × e<sup>−G</sup>                  | 1/e ≈ 0.368 (36.8%)    |
+| Pure ALOHA          | S = G × e<sup>−2G</sup>                 | 1/(2e) ≈ 0.184 (18.4%) |
+| 1-Persistent CSMA   | S ≈ (G × e<sup>−aG</sup>) / (1 + 2aG)   | ~55–60%                |
+| Non-Persistent CSMA | S ≈ (G × e<sup>−aG</sup>) / (1 + a + G) | ~60–70%                |
+| CSMA/CD             | η = 1 / (1 + 5a)                        | up to ~95%             |
+
+---
 
 ## Authors
 
-* Katyayni Aarya - [razbearr](https://github.com/razbearr)
-* Suyesha Saha - [suyu101](https://github.com/suyu101)
-* Copyright © 2025 Katyayni Aarya and Suyesha Saha. All rights reserved.
+* **Katyayni Aarya** — [@razbearr](https://github.com/razbearr)
+* **Suyesha Saha** — [@suyu101](https://github.com/suyu101)
+
+*© 2025 Katyayni Aarya and Suyesha Saha. All rights reserved.*
+
