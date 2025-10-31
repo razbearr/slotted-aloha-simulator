@@ -56,9 +56,11 @@ def simulate_slotted_aloha(num_nodes, p, num_slots):
     
     Returns:
     - slots_data: List of tuples (slot_number, num_transmissions, status)
+    - node_transmissions: Dict tracking which nodes transmitted in each slot
     - statistics: Dictionary with overall statistics
     """
     slots_data = []
+    node_transmissions = {i: [] for i in range(num_nodes)}  # Track per-node attempts
     successful_transmissions = 0
     collisions = 0
     idle_slots = 0
@@ -68,15 +70,33 @@ def simulate_slotted_aloha(num_nodes, p, num_slots):
         transmitting_nodes = np.random.random(num_nodes) < p
         num_transmissions = np.sum(transmitting_nodes)
         
+        # Record which nodes are transmitting
+        transmitting_node_ids = [i for i in range(num_nodes) if transmitting_nodes[i]]
+        
         if num_transmissions == 0:
             status = "Idle"
             idle_slots += 1
+            # All nodes idle
+            for i in range(num_nodes):
+                node_transmissions[i].append((slot, 0))  # 0 = idle
         elif num_transmissions == 1:
             status = "Success"
             successful_transmissions += 1
+            # Mark successful node
+            for i in range(num_nodes):
+                if i in transmitting_node_ids:
+                    node_transmissions[i].append((slot, 1))  # 1 = success
+                else:
+                    node_transmissions[i].append((slot, 0))  # 0 = idle
         else:
             status = "Collision"
             collisions += 1
+            # Mark colliding nodes
+            for i in range(num_nodes):
+                if i in transmitting_node_ids:
+                    node_transmissions[i].append((slot, 2))  # 2 = collision
+                else:
+                    node_transmissions[i].append((slot, 0))  # 0 = idle
         
         slots_data.append((slot, num_transmissions, status))
     
@@ -99,17 +119,52 @@ def simulate_slotted_aloha(num_nodes, p, num_slots):
         "efficiency": (throughput / theoretical_max) * 100
     }
     
-    return slots_data, statistics
+    return slots_data, node_transmissions, statistics
 
 # Theoretical throughput curve
 def get_theoretical_throughput(G_values):
     """Calculate theoretical throughput: S = G * e^(-G)"""
     return G_values * np.exp(-G_values)
 
+# NEW: Plot node-level timeline diagram (Gantt chart)
+def plot_node_timeline(node_transmissions, num_slots_to_show=50):
+    """
+    Create a Gantt-style timeline showing packet transmission attempts per node
+    """
+    colors = {0: '#d3d3d3', 1: '#2ecc71', 2: '#e74c3c'}
+    labels = {0: 'Idle', 1: 'Success', 2: 'Collision'}
+    
+    num_nodes = len(node_transmissions)
+    display_slots = min(num_slots_to_show, len(node_transmissions[0]))
+    
+    fig, ax = plt.subplots(figsize=(14, max(6, num_nodes * 0.4)))
+    
+    for node_id, transmissions in node_transmissions.items():
+        for slot, state in transmissions[:display_slots]:
+            ax.barh(node_id, 1, left=slot, color=colors[state], height=0.8, edgecolor='white', linewidth=0.5)
+    
+    ax.set_xlabel('Time Slot', fontsize=12)
+    ax.set_ylabel('Node ID', fontsize=12)
+    ax.set_title(f'Timeline Diagram: Packet Transmission Attempts (First {display_slots} slots)', 
+                 fontsize=14, fontweight='bold')
+    ax.set_xlim(-0.5, display_slots)
+    ax.set_ylim(-0.5, num_nodes - 0.5)
+    ax.set_yticks(range(num_nodes))
+    ax.set_yticklabels([f"Node {i}" for i in range(num_nodes)])
+    ax.grid(axis='x', alpha=0.3, linestyle='--')
+    
+    # Legend
+    from matplotlib.patches import Patch
+    legend_elements = [Patch(facecolor=colors[k], label=labels[k]) for k in sorted(labels.keys())]
+    ax.legend(handles=legend_elements, loc='upper right', frameon=True, fontsize=10)
+    
+    plt.tight_layout()
+    st.pyplot(fig)
+
 # Main simulation
 if run_simulation:
     with st.spinner("Running simulation..."):
-        slots_data, stats = simulate_slotted_aloha(num_nodes, transmission_prob, num_slots)
+        slots_data, node_transmissions, stats = simulate_slotted_aloha(num_nodes, transmission_prob, num_slots)
     
     # Display statistics
     st.header("Simulation Results")
@@ -140,6 +195,15 @@ if run_simulation:
             "Idle Rate",
             f"{(stats['idle']/num_slots)*100:.1f}%"
         )
+    
+    st.divider()
+    
+    # NEW: Timeline diagram showing packet transmission attempts
+    st.subheader("📊 Timeline Diagram: Packet Transmission Attempts")
+    st.markdown("**Gantt chart showing which nodes attempted transmission in each slot**")
+    plot_node_timeline(node_transmissions, num_slots_to_show=min(100, num_slots))
+    
+    st.divider()
     
     # Create two columns for charts
     chart_col1, chart_col2 = st.columns(2)
@@ -192,8 +256,29 @@ if run_simulation:
         
         st.pyplot(fig2)
     
+    st.divider()
+    
+    # Slot-wise event table
+    st.subheader("📋 Slot-wise Event Table")
+    st.markdown("**Event log showing success, collision, or idle status for each time slot**")
+    
+    # Create DataFrame from slots_data
+    df_events = pd.DataFrame(slots_data, columns=['Slot', 'Transmissions', 'Status'])
+    
+    # Display with filtering option
+    col_filter1, col_filter2 = st.columns([1, 3])
+    with col_filter1:
+        show_rows = st.selectbox("Show rows:", [50, 100, 200, "All"], index=0)
+    
+    if show_rows == "All":
+        st.dataframe(df_events, use_container_width=True, height=400)
+    else:
+        st.dataframe(df_events.head(show_rows), use_container_width=True, height=400)
+    
+    st.divider()
+    
     # Detailed statistics
-    st.subheader("Detailed Statistics")
+    st.subheader("📈 Detailed Statistics")
     
     col_a, col_b = st.columns(2)
     
@@ -215,10 +300,12 @@ if run_simulation:
         - Efficiency: {stats['efficiency']:.1f}% of theoretical max
         """)
     
-    # Time series chart
-    st.subheader("⏱Transmission Activity Over Time (First 100 slots)")
+    st.divider()
     
-    fig3, ax3 = plt.subplots(figsize=(12, 4))
+    # Time series chart
+    st.subheader("⏱️ Transmission Activity Over Time")
+    
+    fig3, ax3 = plt.subplots(figsize=(14, 4))
     
     # Show first 100 slots
     display_slots = min(100, num_slots)
@@ -233,7 +320,7 @@ if run_simulation:
     ax3.bar(slot_numbers, num_transmissions, color=bar_colors, alpha=0.7)
     ax3.set_xlabel('Time Slot', fontsize=12)
     ax3.set_ylabel('Number of Transmissions', fontsize=12)
-    ax3.set_title('Transmission Activity Timeline', fontsize=14, fontweight='bold')
+    ax3.set_title(f'Transmission Activity Timeline (First {display_slots} slots)', fontsize=14, fontweight='bold')
     ax3.grid(True, alpha=0.3, axis='y')
     
     # Add legend
@@ -247,25 +334,49 @@ if run_simulation:
     
     st.pyplot(fig3)
     
+    st.divider()
+    
     # Download results
-    st.subheader("Export Results")
+    st.subheader("💾 Export Results")
     
-    # Create DataFrame
-    df = pd.DataFrame(slots_data, columns=['Slot', 'Transmissions', 'Status'])
-    csv = df.to_csv(index=False)
+    col_dl1, col_dl2 = st.columns(2)
     
-    st.download_button(
-        label="Download Simulation Data (CSV)",
-        data=csv,
-        file_name=f"aloha_simulation_N{num_nodes}_p{transmission_prob}.csv",
-        mime="text/csv"
-    )
+    with col_dl1:
+        # Event table CSV
+        csv_events = df_events.to_csv(index=False)
+        st.download_button(
+            label="📥 Download Slot-wise Events (CSV)",
+            data=csv_events,
+            file_name=f"slotted_aloha_events_N{num_nodes}_p{transmission_prob}.csv",
+            mime="text/csv"
+        )
+    
+    with col_dl2:
+        # Statistics CSV
+        stats_df = pd.DataFrame([{
+            "Nodes": num_nodes,
+            "Transmission Probability": transmission_prob,
+            "Total Slots": num_slots,
+            "Offered Load (G)": stats['offered_load'],
+            "Throughput (S)": stats['throughput'],
+            "Success Rate (%)": (stats['successful']/num_slots)*100,
+            "Collision Rate (%)": (stats['collisions']/num_slots)*100,
+            "Idle Rate (%)": (stats['idle']/num_slots)*100,
+            "Efficiency (%)": stats['efficiency']
+        }])
+        csv_stats = stats_df.to_csv(index=False)
+        st.download_button(
+            label="📥 Download Statistics Summary (CSV)",
+            data=csv_stats,
+            file_name=f"slotted_aloha_stats_N{num_nodes}_p{transmission_prob}.csv",
+            mime="text/csv"
+        )
 
 else:
     # Initial state - show explanation
-    st.info("Set your parameters in the sidebar and click **Run Simulation** to start!")
+    st.info("👈 Set your parameters in the sidebar and click **Run Simulation** to start!")
     
-    st.header("About Slotted ALOHA")
+    st.header("📚 About Slotted ALOHA")
     
     st.markdown("""
     ### How It Works:
